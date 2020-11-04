@@ -1,7 +1,7 @@
 package frc.team4373.robot.commands.drivetrain;
 
-import edu.wpi.first.wpilibj2.command.PIDCommand;
 import edu.wpi.first.wpilibj.controller.PIDController;
+import edu.wpi.first.wpilibj2.command.PIDCommand;
 import frc.team4373.robot.RobotMap;
 import frc.team4373.robot.input.OI;
 import frc.team4373.robot.subsystems.Drivetrain;
@@ -33,10 +33,12 @@ public class DriveStraightCommand extends PIDCommand {
         this.setSetpoint(_returnPIDInput());
     }
 
+    @SuppressWarnings("checkstyle:MethodName")
     private double _returnPIDInput() {
         return drivetrain.getPose().getRotation().getDegrees();
     }
 
+    @SuppressWarnings("checkstyle:MethodName")
     private void _usePIDOutput(double rotPIDOutput) {
         double x = OI.getInstance().getDriveJoystick().rooGetX();
         double y = -OI.getInstance().getDriveJoystick().rooGetY();
