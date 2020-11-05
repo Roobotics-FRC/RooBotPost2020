@@ -2,22 +2,21 @@ package frc.team4373.robot.commands.intake;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.team4373.robot.RobotMap;
 import frc.team4373.robot.input.OI;
 import frc.team4373.robot.subsystems.Intake;
 
-public class IntakeCommand extends CommandBase {
+public class IntakeCommand extends Command {
     private static final double MIN_SERVO_RELEASE_TIME_SEC = 0.5;
-    private Intake intake;
+    private final Intake intake;
     private double depressTime;
 
     public IntakeCommand() {
-        addRequirements(this.intake = Intake.getInstance());
+        requires(this.intake = Intake.getInstance());
     }
 
     @Override
-    public void execute() {
+    protected void execute() {
         // Ball intake/dislodgment from ground
         if (OI.getInstance().getOperatorJoystick().getRawButton(RobotMap.OPER_INTAKE_BUTTON)) {
             this.intake.intake();
@@ -45,7 +44,7 @@ public class IntakeCommand extends CommandBase {
     }
 
     @Override
-    public boolean isFinished() {
+    protected boolean isFinished() {
         return false;
     }
 }

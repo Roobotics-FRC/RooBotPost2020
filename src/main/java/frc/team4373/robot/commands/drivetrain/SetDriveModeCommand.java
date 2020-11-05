@@ -1,24 +1,25 @@
 package frc.team4373.robot.commands.drivetrain;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj.command.Command;
 import frc.team4373.robot.subsystems.Drivetrain;
+import frc.team4373.swerve.SwerveDrivetrain;
 
-public class SetDriveModeCommand extends CommandBase {
-    private Drivetrain.DriveMode mode;
-    private Drivetrain drivetrain;
+public class SetDriveModeCommand extends Command {
+    private final SwerveDrivetrain.DriveMode mode;
+    private final Drivetrain drivetrain;
 
-    public SetDriveModeCommand(Drivetrain.DriveMode mode) {
-        addRequirements(this.drivetrain = Drivetrain.getInstance());
+    public SetDriveModeCommand(SwerveDrivetrain.DriveMode mode) {
+        requires(this.drivetrain = Drivetrain.getInstance());
         this.mode = mode;
     }
 
     @Override
-    public void execute() {
+    protected void execute() {
         this.drivetrain.setDriveMode(this.mode);
     }
 
     @Override
-    public boolean isFinished() {
+    protected boolean isFinished() {
         return true;
     }
 }

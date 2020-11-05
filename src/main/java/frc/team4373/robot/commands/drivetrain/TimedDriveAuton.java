@@ -1,11 +1,16 @@
 package frc.team4373.robot.commands.drivetrain;
 
-import edu.wpi.first.wpilibj.controller.PIDController;
-import edu.wpi.first.wpilibj2.command.*;
+import edu.wpi.first.wpilibj.command.PIDCommand;
 import frc.team4373.robot.RobotMap;
 import frc.team4373.robot.subsystems.Drivetrain;
 
-public class TimedDriveAuton extends ParallelRaceGroup {
+public class TimedDriveAuton extends PIDCommand {
+    private final Drivetrain drivetrain;
+
+    private final double speed;
+    private final double time;
+    private final double angle;
+
     /**
      * Constructs a time based, driving auton.
      * @param time the time the command runs for.
@@ -13,60 +18,45 @@ public class TimedDriveAuton extends ParallelRaceGroup {
      * @param angle the angle at which the robot moves.
      */
     public TimedDriveAuton(double time, double speed, double angle) {
-        addCommands(new __TimedDriveAuton(speed, angle), new WaitCommand(time));
+        super(RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS.kP, RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS.kI,
+                RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS.kD);
+        requires(this.drivetrain = Drivetrain.getInstance());
+
+        this.time = time;
+        this.speed = speed;
+        this.angle = angle;
     }
 
-    @SuppressWarnings("checkstyle:TypeName")
-    private static class __TimedDriveAuton extends PIDCommand {
-        private Drivetrain drivetrain;
+    @Override
+    protected void initialize() {
+        setTimeout(time);
+        this.setSetpoint(returnPIDInput());
+    }
 
-        private double speed;
-        private double angle;
+    @Override
+    protected double returnPIDInput() {
+        return drivetrain.getAngle();
+    }
 
-        public __TimedDriveAuton(double speed, double angle) {
-            super(new PIDController(RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS.kP,
-                    RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS.kI,
-                    RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS.kD),
-                () -> 0, () -> 0, (output) -> { }, Drivetrain.getInstance());
-            this.drivetrain = Drivetrain.getInstance();
-            this.m_measurement = this::_returnPIDInput;
-            initialize();
-            this.m_useOutput = this::_usePIDOutput;
+    @Override
+    protected void usePIDOutput(double rotOutput) {
+        double x = Math.cos(Math.toRadians(this.angle)) * speed;
+        double y = Math.sin(Math.toRadians(this.angle)) * speed;
+        this.drivetrain.drive(rotOutput * RobotMap.DRIVE_ASSIST_MAX_TURN_SPEED, x, y);
+    }
 
-            this.speed = speed;
-            this.angle = angle;
-        }
+    @Override
+    protected boolean isFinished() {
+        return this.isTimedOut();
+    }
 
-        @Override
-        public void initialize() {
-            super.initialize();
-            this.setSetpoint(_returnPIDInput());
-        }
+    @Override
+    protected void end() {
+        this.drivetrain.stop();
+    }
 
-        @SuppressWarnings("checkstyle:MethodName")
-        private double _returnPIDInput() {
-            return drivetrain.getPigeonYawRaw();
-        }
-
-        @SuppressWarnings("checkstyle:MethodName")
-        private void _usePIDOutput(double rotationOutput) {
-            double x = Math.cos(Math.toRadians(this.angle)) * speed;
-            double y = Math.sin(Math.toRadians(this.angle)) * speed;
-            this.drivetrain.drive(rotationOutput * RobotMap.DRIVE_ASSIST_MAX_TURN_SPEED, x, y);
-        }
-
-        @Override
-        public boolean isFinished() {
-            return false;
-        }
-
-        @Override
-        public void end(boolean interrupted) {
-            drivetrain.stop();
-        }
-
-        private void setSetpoint(double setpoint) {
-            this.m_setpoint = () -> setpoint;
-        }
+    @Override
+    protected void interrupted() {
+        this.end();
     }
 }

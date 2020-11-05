@@ -1,10 +1,15 @@
 package frc.team4373.robot.commands.camera;
 
-import edu.wpi.first.networktables.*;
-import edu.wpi.first.wpilibj.*;
-import edu.wpi.first.wpilibj2.command.*;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.NetworkTableType;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj.command.PIDCommand;
+import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.team4373.robot.RobotMap;
 import frc.team4373.robot.input.OI;
 import frc.team4373.robot.subsystems.Camera;
@@ -12,19 +17,19 @@ import frc.team4373.robot.subsystems.Drivetrain;
 
 import java.util.function.Function;
 
-public class VisionQuerierCommand extends CommandBase {
+public class VisionQuerierCommand extends Command {
     private enum State {
         POLLING, SETTING, WAITING
     }
 
     private State state;
 
-    private Function<Double, Command> constructor;
-    private String visionField;
-    private double tolerance;
+    private final Function<Double, PIDCommand> constructor;
+    private final String visionField;
+    private final double tolerance;
 
-    private Command command;
-    private NetworkTable visionTable;
+    private PIDCommand command;
+    private final NetworkTable visionTable;
 
     private double accumulator = 0;
     private int pollingIterationCount = 0; // # of polls in POLLING state
@@ -50,8 +55,9 @@ public class VisionQuerierCommand extends CommandBase {
      *                    vision table field.
      */
     public VisionQuerierCommand(String visionField, double tolerance,
-                                Function<Double, Command> constructor) {
-        addRequirements(Camera.getInstance(), Drivetrain.getInstance());
+                                Function<Double, PIDCommand> constructor) {
+        requires(Camera.getInstance());
+        requires(Drivetrain.getInstance());
 
         this.visionField = visionField;
         this.tolerance = tolerance;
@@ -62,7 +68,7 @@ public class VisionQuerierCommand extends CommandBase {
     }
 
     @Override
-    public void initialize() {
+    protected void initialize() {
         if (this.visionTable.getEntry(this.visionField).getType() != NetworkTableType.kDouble) {
             DriverStation.reportError(
                     "Non-double vision field (" + this.visionField
@@ -79,7 +85,7 @@ public class VisionQuerierCommand extends CommandBase {
     }
 
     @Override
-    public void execute() {
+    protected void execute() {
         switch (state) {
             case POLLING:
                 this.waitStart = -1;
@@ -115,13 +121,13 @@ public class VisionQuerierCommand extends CommandBase {
 
                 // Start the command—will steal control from us b/c we require the drivetrain
                 this.command = this.constructor.apply(setpoint);
-                this.command.schedule();
+                Scheduler.getInstance().add(this.command);
                 this.state = State.WAITING;
                 ++this.rotationExecutionCount;
                 break;
             case WAITING:
                 SmartDashboard.putString("v/state", "waiting");
-                if (command.isScheduled()) {
+                if (command.isRunning()) {
                     SmartDashboard.putString("v/auton_cmd_state", "running");
                 } else {
                     SmartDashboard.putString("v/auton_cmd_state", "done");
@@ -142,7 +148,7 @@ public class VisionQuerierCommand extends CommandBase {
     }
 
     @Override
-    public boolean isFinished() {
+    protected boolean isFinished() {
         return this.finished
                 || this.rotationExecutionCount >= RobotMap.MAX_ALLOWABLE_VISION_ITERATIONS;
     }
@@ -158,8 +164,13 @@ public class VisionQuerierCommand extends CommandBase {
     }
 
     @Override
-    public void end(boolean interrupted) {
+    protected void end() {
         OI.getInstance().getOperatorJoystick().setRumble(GenericHID.RumbleType.kRightRumble, 0);
         OI.getInstance().getOperatorJoystick().setRumble(GenericHID.RumbleType.kLeftRumble, 0);
+    }
+
+    @Override
+    protected void interrupted() {
+        this.end();
     }
 }

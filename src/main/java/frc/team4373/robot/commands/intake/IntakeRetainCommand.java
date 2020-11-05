@@ -1,23 +1,22 @@
 package frc.team4373.robot.commands.intake;
 
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.team4373.robot.subsystems.Intake;
 
-public class IntakeRetainCommand extends CommandBase {
-    private Intake intake;
+public class IntakeRetainCommand extends Command {
+    private final Intake intake;
 
     public IntakeRetainCommand() {
-        addRequirements(this.intake = Intake.getInstance());
+        requires(this.intake = Intake.getInstance());
     }
 
     @Override
-    public void execute() {
+    protected void execute() {
         this.intake.retainBall();
     }
 
     @Override
-    public boolean isFinished() {
+    protected boolean isFinished() {
         return false;
     }
 }

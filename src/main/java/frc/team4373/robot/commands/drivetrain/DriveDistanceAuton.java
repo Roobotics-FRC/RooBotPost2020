@@ -1,28 +1,34 @@
 package frc.team4373.robot.commands.drivetrain;
 
-import edu.wpi.first.wpilibj.geometry.Translation2d;
+import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.PIDOutput;
+import edu.wpi.first.wpilibj.PIDSource;
+import edu.wpi.first.wpilibj.PIDSourceType;
+import edu.wpi.first.wpilibj.command.PIDCommand;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.util.Units;
 import frc.team4373.robot.RobotMap;
-import frc.team4373.robot.commands.util.RooDualPIDCommand;
 import frc.team4373.robot.subsystems.Drivetrain;
 
 /**
  * Drives a distance in the specified direction. Field/bot-oriented driving is determined by the
  * drivetrain's current drive mode (own-ship- or field-up).
  */
-public class DriveDistanceAuton extends RooDualPIDCommand {
+@SuppressWarnings("removal")
+public class DriveDistanceAuton extends PIDCommand {
     private static final RobotMap.PID DRIVE_GAINS = new RobotMap.PID(0, 0.01, 0, 0);
     private static final double PID_OUTPUT_THRESHOLD = 0.2;
+
+    private final PIDController rotationController;
+    private final PIDSource rotationSource;
+    private final PIDOutput rotationOutputLambda;
+    private double startAngle;
+    private double rotationPIDOutput;
 
     private final Drivetrain drivetrain;
 
     private final double distance;
     private final double speed;
     private final double angle;
-
-    private Translation2d originalPosition;
-    private double originalHeading;
 
     private boolean finished = false;
 
@@ -32,36 +38,61 @@ public class DriveDistanceAuton extends RooDualPIDCommand {
      * @param angle the angle at which to drive.
      */
     public DriveDistanceAuton(double distance, double speed, double angle) {
-        super(DRIVE_GAINS, RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS, Drivetrain.getInstance());
-        this.drivetrain = Drivetrain.getInstance();
+        super(DRIVE_GAINS.kP, DRIVE_GAINS.kI, DRIVE_GAINS.kD);
+        requires(this.drivetrain = Drivetrain.getInstance());
 
         this.distance = distance;
         this.speed = speed;
         this.angle = angle;
+
+        this.rotationSource = new PIDSource() {
+            @Override
+            public void setPIDSourceType(PIDSourceType pidSource) {
+                return;
+            }
+
+            @Override
+            public PIDSourceType getPIDSourceType() {
+                return PIDSourceType.kDisplacement;
+            }
+
+            @Override
+            public double pidGet() {
+                return drivetrain.getAngle() - startAngle;
+            }
+        };
+
+        this.rotationOutputLambda = output -> {
+            this.rotationPIDOutput = output;
+        };
+
+        this.rotationController = new PIDController(RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS.kP,
+                RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS.kI,
+                RobotMap.DRIVE_STRAIGHT_ROTATE_GAINS.kD,
+                this.rotationSource, this.rotationOutputLambda);
+        this.rotationController.setSetpoint(0);
+        this.rotationController.setOutputRange(-1, 1);
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
-        originalPosition = drivetrain.getPose().getTranslation();
-        originalHeading = returnPIDInput2();
+    protected void initialize() {
+        double targetPosition = drivetrain.getAverageDriveMotorPosition()
+                + this.distance / RobotMap.ENCODER_UNITS_TO_INCHES;
         this.finished = false;
+        this.setSetpoint(targetPosition);
+        this.startAngle = drivetrain.getAngle();
+        this.rotationController.enable();
     }
 
     @Override
-    protected double returnPIDInput1() {
-        return drivetrain.getPose().getTranslation().getDistance(originalPosition);
+    protected double returnPIDInput() {
+        return drivetrain.getAverageDriveMotorPosition();
     }
 
     @Override
-    protected double returnPIDInput2() {
-        return drivetrain.getPose().getRotation().getDegrees();
-    }
-
-    @Override
-    protected void usePIDOutput(double distancePIDOutput, double rotationPIDOutput) {
-        SmartDashboard.putNumber("swerve/auton_output", distancePIDOutput);
-        if (Math.abs(distancePIDOutput) <= PID_OUTPUT_THRESHOLD) {
+    protected void usePIDOutput(double output) {
+        SmartDashboard.putNumber("swerve/auton_output", output);
+        if (Math.abs(output) <= PID_OUTPUT_THRESHOLD) {
             this.finished = true;
             return;
         }
@@ -71,22 +102,17 @@ public class DriveDistanceAuton extends RooDualPIDCommand {
     }
 
     @Override
-    protected double getSetpoint1() {
-        return Units.inchesToMeters(distance);
+    protected boolean isFinished() {
+        return this.finished;
     }
 
     @Override
-    protected double getSetpoint2() {
-        return originalHeading;
-    }
-
-    @Override
-    public boolean isFinished() {
-        return finished;
-    }
-
-    @Override
-    public void end(boolean interrupted) {
+    protected void end() {
         this.drivetrain.stop();
+    }
+
+    @Override
+    protected void interrupted() {
+        this.end();
     }
 }

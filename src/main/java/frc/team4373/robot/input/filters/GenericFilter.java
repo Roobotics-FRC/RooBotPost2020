@@ -7,5 +7,5 @@ package frc.team4373.robot.input.filters;
  */
 
 public interface GenericFilter<E> {
-    public E applyFilter(E input);
+    E applyFilter(E input);
 }

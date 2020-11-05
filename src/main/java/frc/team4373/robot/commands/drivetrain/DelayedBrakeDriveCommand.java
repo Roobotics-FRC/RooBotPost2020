@@ -1,33 +1,31 @@
 package frc.team4373.robot.commands.drivetrain;
 
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.team4373.robot.RobotMap;
 import frc.team4373.robot.input.OI;
 import frc.team4373.robot.subsystems.Drivetrain;
 
 import static frc.team4373.robot.Utils.isZero;
 
-public class DelayedBrakeDriveCommand extends CommandBase {
+public class DelayedBrakeDriveCommand extends Command {
     // Represents the number of 50-millisecond intervals to wait before braking
     private static final int BRAKE_DELAY_COUNTS = 40;
 
-    private Drivetrain drivetrain;
+    private final Drivetrain drivetrain;
 
     private double brakeCountdown;
 
     public DelayedBrakeDriveCommand() {
-        addRequirements(this.drivetrain = Drivetrain.getInstance());
+        requires(this.drivetrain = Drivetrain.getInstance());
     }
 
     @Override
-    public void initialize() {
+    protected void initialize() {
         super.initialize();
     }
 
     @Override
-    public void execute() {
+    protected void execute() {
         double x = OI.getInstance().getDriveJoystick().rooGetX();
         double y = -OI.getInstance().getDriveJoystick().rooGetY();
         double rotation = OI.getInstance().getDriveJoystick().rooGetTwist();
@@ -53,12 +51,17 @@ public class DelayedBrakeDriveCommand extends CommandBase {
     }
 
     @Override
-    public void end(boolean interrupted) {
+    protected void end() {
         this.drivetrain.stop();
     }
 
     @Override
-    public boolean isFinished() {
+    protected void interrupted() {
+        this.end();
+    }
+
+    @Override
+    protected boolean isFinished() {
         return false;
     }
 }

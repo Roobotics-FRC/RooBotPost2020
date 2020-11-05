@@ -3,7 +3,6 @@ package frc.team4373.robot.commands.shooter;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.team4373.robot.RobotMap;
 import frc.team4373.robot.Utils;
 import frc.team4373.robot.input.OI;
@@ -12,18 +11,18 @@ import frc.team4373.robot.subsystems.Shooter;
 /**
  * Shoots the balls from the shooter.
  */
-public class ShooterShootCommand extends CommandBase {
+public class ShooterShootCommand extends Command {
     protected Shooter shooter;
 
     private double velocity;
-    private boolean vision;
+    private final boolean vision;
 
     /**
      * Shoots the balls from the shooter at the specified velocity.
      * @param velocity the velocity at which to shoot the balls.
      */
     public ShooterShootCommand(double velocity) {
-        addRequirements(this.shooter = Shooter.getInstance());
+        requires(this.shooter = Shooter.getInstance());
         this.velocity = velocity;
         this.vision = false;
     }
@@ -32,12 +31,12 @@ public class ShooterShootCommand extends CommandBase {
      * Shoots using the camera's distance computation to determine speed.
      */
     public ShooterShootCommand() {
-        addRequirements(this.shooter = Shooter.getInstance());
+        requires(this.shooter = Shooter.getInstance());
         this.vision = true;
     }
 
     @Override
-    public void initialize() {
+    protected void initialize() {
         if (this.vision) {
             double distance = NetworkTableInstance.getDefault()
                     .getTable(RobotMap.VISION_TABLE_NAME).getEntry(RobotMap.VISION_DIST_FIELD)
@@ -53,7 +52,7 @@ public class ShooterShootCommand extends CommandBase {
     }
 
     @Override
-    public void execute() {
+    protected void execute() {
         double adjustedVelocity = velocity
                 + OI.getInstance().getOperatorJoystick().getAxis(
                         RobotMap.OPER_ADJUST_SHOOT_SPEED_AXIS) / 10d;
@@ -61,13 +60,18 @@ public class ShooterShootCommand extends CommandBase {
     }
 
     @Override
-    public boolean isFinished() {
+    protected boolean isFinished() {
         return false;
     }
 
     @Override
-    public void end(boolean interrupted) {
+    protected void end() {
         this.shooter.stopShooter();
+    }
+
+    @Override
+    protected void interrupted() {
+        this.end();
     }
 
     /**

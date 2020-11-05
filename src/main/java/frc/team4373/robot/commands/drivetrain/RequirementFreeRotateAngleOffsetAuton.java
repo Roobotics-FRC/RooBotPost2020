@@ -8,6 +8,6 @@ package frc.team4373.robot.commands.drivetrain;
 public class RequirementFreeRotateAngleOffsetAuton extends RotateAngleOffsetAuton {
     public RequirementFreeRotateAngleOffsetAuton(double offset) {
         super(offset);
-        this.m_requirements.clear();
+        clearRequirements();
     }
 }

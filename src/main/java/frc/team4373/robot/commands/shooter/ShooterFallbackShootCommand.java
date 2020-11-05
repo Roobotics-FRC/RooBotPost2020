@@ -1,25 +1,25 @@
 package frc.team4373.robot.commands.shooter;
 
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj.command.Command;
 import frc.team4373.robot.RobotMap;
 import frc.team4373.robot.input.OI;
 import frc.team4373.robot.subsystems.Shooter;
 
-public class ShooterFallbackShootCommand extends CommandBase {
-    private Shooter shooter;
+public class ShooterFallbackShootCommand extends Command {
+    private final Shooter shooter;
 
     public ShooterFallbackShootCommand() {
-        addRequirements(this.shooter = Shooter.getInstance());
+        requires(this.shooter = Shooter.getInstance());
     }
 
     @Override
-    public void execute() {
+    protected void execute() {
         double sliderVal = OI.getInstance().getDriveJoystick().rooGetThrottle();
         shooter.setVelocity(sliderVal * RobotMap.SHOOTER_MAX_SPEED_NATIVE_UNITS);
     }
 
     @Override
-    public boolean isFinished() {
+    protected boolean isFinished() {
         return false;
     }
 }

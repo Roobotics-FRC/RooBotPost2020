@@ -1,20 +1,19 @@
 package frc.team4373.robot.commands.climber;
 
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.team4373.robot.RobotMap;
 import frc.team4373.robot.input.OI;
 import frc.team4373.robot.subsystems.Climber;
 
-public class ClimberCommand extends CommandBase {
-    private Climber climber;
+public class ClimberCommand extends Command {
+    private final Climber climber;
 
     public ClimberCommand() {
-        addRequirements(this.climber = Climber.getInstance());
+        requires(this.climber = Climber.getInstance());
     }
 
     @Override
-    public void execute() {
+    protected void execute() {
         switch (OI.getInstance().getOperatorJoystick().getPOV()) {
             case 0:
             case 45:
@@ -45,14 +44,19 @@ public class ClimberCommand extends CommandBase {
     }
 
     @Override
-    public boolean isFinished() {
+    protected boolean isFinished() {
         return false;
     }
 
     @Override
-    public void end(boolean interrupted) {
+    protected void end() {
         this.climber.stopLift();
         this.climber.raiseLeftWinch(0);
         this.climber.raiseRightWinch(0);
+    }
+
+    @Override
+    protected void interrupted() {
+        this.end();
     }
 }
