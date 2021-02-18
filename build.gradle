@@ -13,7 +13,6 @@ plugins {
     id "edu.wpi.first.GradleRIO" version "2020.3.2"
     id "idea"
     id "com.github.spotbugs" version "4.5.1"
-    id 'org.jetbrains.kotlin.jvm' version '1.4.10'
 }
 
 sourceCompatibility = 11
@@ -132,8 +131,6 @@ dependencies {
     // In Java for now, the argument must be false
     simulation wpi.deps.sim.gui(wpi.platforms.desktop, false)
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib"
-
     testImplementation 'junit:junit:4.12'
 }
 
@@ -148,15 +145,4 @@ jar {
 wrapper {
     gradleVersion = '6.0'
     distributionType = Wrapper.DistributionType.ALL
-}
-
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = targetCompatibility
-    }
-}
-compileTestKotlin {
-    kotlinOptions {
-        jvmTarget = targetCompatibility
-    }
 }
